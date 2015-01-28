@@ -50,7 +50,7 @@
   $(document).on('touchmove mousemove', function(e) {
     if(e.originalEvent.touches)
         e = e.originalEvent.touches[0];
-      
+
     if(drag.dragging) {
       drag.currentX = e.pageX;
       drag.currentY = e.pageY;
@@ -63,8 +63,8 @@
 
     if(drag.dragging) {
       drag.dragging = false;
-      var x = drag.endX = e.pageX;
-      var y = drag.endY = e.pageY;
+      var x = drag.endX = drag.currentX;
+      var y = drag.endY = drag.currentY;
       var vx = (drag.startX - x)*5;
       var vy = (drag.startY - y)*5;
       addProjectile(x, y, vx, vy, radius, color);
