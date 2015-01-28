@@ -36,7 +36,9 @@
 
   $(document).on('touchstart mousedown', function(e) {
       e.preventDefault();
-      
+      if(e.originalEvent.touches)
+        e = e.originalEvent.touches[0];
+
       if(!drag.dragging) {
         drag.dragging = true;
         drag.startX = drag.endX = drag.currentX = e.pageX;
@@ -46,6 +48,9 @@
   });
 
   $(document).on('touchmove mousemove', function(e) {
+    if(e.originalEvent.touches)
+        e = e.originalEvent.touches[0];
+      
     if(drag.dragging) {
       drag.currentX = e.pageX;
       drag.currentY = e.pageY;
@@ -53,6 +58,9 @@
   });
 
   $(document).on('touchend mouseup', function(e) {
+    if(e.originalEvent.touches)
+        e = e.originalEvent.touches[0];
+
     if(drag.dragging) {
       drag.dragging = false;
       var x = drag.endX = e.pageX;
