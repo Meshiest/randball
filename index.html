@@ -1,0 +1,167 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Yogurt</title>
+    <style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing:
+  border-box;
+}
+#draw {
+  position:absolute;
+  width:100%;
+  height:100%;
+  border:1px solid #000000;
+}
+    </style>
+
+  </head>
+  <body>
+    <canvas id="draw">
+    </canvas>
+  </body>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+  <script>
+
+  var projectiles = []
+  var gravity = 900;
+  var color = '#FFFFFF';
+  var radius = 50;
+
+  var drag = {};
+  drag.dragging = false;
+
+  $(document).on('touchstart mousedown', function(e) {
+      e.preventDefault();
+      
+      if(!drag.dragging) {
+        drag.dragging = true;
+        drag.startX = drag.endX = drag.currentX = e.pageX;
+        drag.startY = drag.endY = drag.currentY = e.pageY;
+      }
+
+  });
+
+  $(document).on('touchmove mousemove', function(e) {
+    if(drag.dragging) {
+      drag.currentX = e.pageX;
+      drag.currentY = e.pageY;
+    }
+  });
+
+  $(document).on('touchend mouseup', function(e) {
+    if(drag.dragging) {
+      drag.dragging = false;
+      var x = drag.endX = e.pageX;
+      var y = drag.endY = e.pageY;
+      var vx = (drag.startX - x)*5;
+      var vy = (drag.startY - y)*5;
+      addProjectile(x, y, vx, vy, radius, color);
+      socket.emit('launch', x, y, vx, vy);
+    }
+  });
+  
+  $('html, body').scrollTop(1);
+
+  var curr = new Date().getTime();
+  var last = curr;
+  var canvas = $('#draw')[0];
+  var g = canvas.getContext('2d');
+
+  canvas.width = $(window).width();
+  canvas.height = $(window).height();
+
+  var socket = io();
+
+  setInterval(function() {
+    g.save();
+
+    canvas.width = $(window).width();
+    canvas.height = $(window).height();
+
+    last = curr;
+    curr = new Date().getTime();
+    var delta = (curr - last)/1000.0;
+
+    g.fillStyle="#FFFFFF";
+    g.fillRect(0,0,canvas.width,canvas.height);
+
+    if(drag.dragging) {
+      g.strokeStyle = '#000000';
+      g.lineWidth = 5;
+      g.beginPath();
+      g.moveTo(drag.startX, drag.startY);
+      g.lineTo(drag.currentX, drag.currentY);
+      g.stroke();
+      g.closePath();
+      g.strokeStyle = '';
+      g.lineWidth = 1;
+    }
+
+    for(var i in projectiles) {
+      var proj = projectiles[i];
+      proj.x += proj.vx * delta;
+      proj.y += proj.vy * delta;
+      proj.vy += gravity * delta;
+      g.fillStyle = proj.color
+      drawOval(proj.x, proj.y, proj.rad, proj.rad);
+
+      if(proj.y > canvas.height + proj.rad) {
+        delete projectiles[i];
+        i--;
+      }
+    }
+
+    last = curr;
+    curr = new Date().getTime();
+    var delta = (curr - last)/1000.0;
+
+    g.restore();
+  },20);
+
+  socket.on('settings', function(rad, col) {
+    radius = rad;
+    color = col;
+  });
+
+  socket.on('launch', function(x, y, vx, vy, rad, col) {
+    addProjectile(x, y, vx, vy, rad, col);
+  });
+
+  function addProjectile(x, y, vx, vy, rad, col) {
+    var proj = {}
+    proj.x = x;
+    proj.y = y;
+    proj.vx = vx;
+    proj.vy = vy;
+    proj.rad = rad
+    proj.color = col;
+    projectiles.push(proj);
+  }
+
+  function drawOval(x, y, width, height) {
+    g.save();
+    g.translate(x, y);
+    g.strokeStyle = '';
+    g.scale(width, height);
+    g.beginPath();
+    g.arc(0, 0, 1, 0, 2 * Math.PI, false);
+    g.closePath();
+    g.restore();
+    g.fill();
+    g.stroke();
+  }
+
+  function drawImage(img, x, y, theta) {
+    g.save();
+    g.translate(x, y);
+    g.rotate(theta);
+    g.drawImage(img, -img.width/2, -img.height/2);
+    g.restore();
+  }
+
+  </script>
+</html>
